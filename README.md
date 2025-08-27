@@ -74,9 +74,14 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
 | POST   | `/api/v1/auth/refresh-token`   | Refresh access token              |
 | POST   | `/api/v1/auth/change-password` | change password with old password |
 | POST   | `/api/v1/auth/logout`          | Logout and clear cookies          |
-| POST   | `/api/v1/auth/register/user`   | Register user with wallet         |
-| POST   | `/api/v1/auth/register/agent`  | Register agent with wallet        |
-| POST   | `/api/v1/auth/register/admin`  | Register admin without wallet     |
+| POST   | `/api/v1/auth/register/user`   | Register user with user           |
+| POST   | `/api/v1/auth/register/agent`  | Register agent with agent         |
+| POST   | `/api/v1/auth/register/admin`  | Register admin without admin      |
+| POST | `/api/v1/auth/send-reset-otp` | reset password send otp |
+| POST | `/api/v1/auth/verify-reset-otp` | verify reset otp |
+| POST | `/api/v1/auth/reset-password` | reset password with new |
+| POST | `/api/v1/auth/send-verify-otp` | send verify account otp |
+| POST | `/api/v1/auth/verify-account` | verify account by otp   |
 
 ---
 
@@ -88,7 +93,7 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
 | PATCH  | `/api/v1/users/me`           | Update user profile        |
 | GET    | `/api/v1/users/wallet`       | User's Wallet              |
 | GET    | `/api/v1/users/transactions` | User's transaction history |
-| POST   | `/api/v1/users/top-up`       | Add money (top up)         |
+| POST   | `/api/v1/users/add-money`       | Add money (top up)         |
 | POST   | `/api/v1/users/withdraw`     | Withdraw money from wallet |
 | POST   | `/api/v1/users/send-monay`   | send money to another user |
 
@@ -119,38 +124,14 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
 | GET    | `/api/v1/admins/agents`                  | Get all agents                   |
 | GET    | `/api/v1/admins/wallets`                 | Get all wallet                   |
 | GET    | `/api/v1/admins/transactions`            | Get all Transaction history      |
-| PATCH  | `/api/v1/admins/status/:email`           | Update user, agent, admin status |
-| PATCH  | `/api/v1/admins/agents/approval/:email`  | Update Agent Approval Status     |
-| PATCH  | `/api/v1/admins/wallets/status/:ownerId` | Update wallet Status             |
-
----
-
-### 🗺️ Division Route
-
-| Method | Endpoint                  | Description                       |
-| ------ | ------------------------- | --------------------------------- |
-| POST   | `/api/v1/divisions`       | Create Division                   |
-| GET    | `/api/v1/divisions`       | Get All Division                  |
-| GET    | `/api/v1/divisions/:slug` | Get Single Division               |
-| PATCH  | `/api/v1/divisions/:slug` | Update Division                   |
-| DELETE | `/api/v1/divisions/:slug` | Delete Division with its District |
-
----
-
-### 🗺️ District Route
-
-| Method | Endpoint                           | Description                     |
-| ------ | ---------------------------------- | ------------------------------- |
-| POST   | `/api/v1/districts`                | Create District                 |
-| GET    | `/api/v1/districts`                | Get All District                |
-| GET    | `/api/v1/districts/:slug`          | Get Single District             |
-| GET    | `/api/v1/districts/division/:slug` | Get Single District By Division |
-| PATCH  | `/api/v1/districts/:slug`          | Update District                 |
-| Delete | `/api/v1/districts/:slug`          | Delete District                 |
+| PATCH  | `/api/v1/admins/users/:userId/status`    | Update user, agent, admin status |
+| PATCH  | `/api/v1/admins/agents/:agentId/approval`| Update Agent Approval Status     |
+| PATCH  | `/api/v1/admins/wallets/:walletId/status`| Update wallet Status             |
 
 ---
 
 ### Query
+
 ```
 ?searchTerm=transfer&type=transfer&sort=-createdAt&fields=type,amount,createdAt&page=2&limit=5
 ```
@@ -194,8 +175,8 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
   "phone": "+880123456789",
   "gender": "male",
   "location": {
-    "division": "rajshahi-division",
-    "districts": "rajshahi-chapainawabganj-district",
+    "division": "rajshahi",
+    "districts": "chapainawabganj",
     "address": "sadar"
   }
 }
@@ -211,18 +192,19 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
   "gender": "male",
   "businessName": "demo shop",
   "location": {
-    "division": "rajshahi-division",
-    "districts": "rajshahi-chapainawabganj-district",
+    "division": "rajshahi",
+    "districts": "chapainawabganj",
     "address": "sadar"
   }
 }
 ```
 
-### User Add Money (top up) & withdraw (POST `/api/v1/users/top-up` & `/api/v1/users/withdraw`)
+### User Add Money (top up) & withdraw (POST `/api/v1/users/add-money` & `/api/v1/users/withdraw`)
 
 ```json
 {
-  "amount": 10000
+  "amount": 10000,
+  "reference": "bank"
 }
 ```
 
@@ -253,7 +235,7 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
 }
 ```
 
-### Update user, agent, admin status (PATCH `/api/v1/admins/status/:email`)
+### Update user, agent, admin status (PATCH `/api/v1/admins/users/:userId/status`)
 
 ```json
 {
@@ -261,7 +243,7 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
 }
 ```
 
-### Update Agent Approval Status (PATCH `/api/v1/admins/agents/approval/:email`)
+### Update Agent Approval Status (PATCH `/api/v1/admins/agents/:agentId/approval`)
 
 ```json
 {
@@ -269,28 +251,11 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
 }
 ```
 
-### Update wallet Status (PATCH `/api/v1/admins/wallets/status/:ownerId`)
+### Update wallet Status (PATCH `/api/v1/admins/wallets/:walletId/status`)
 
 ```json
 {
   "status": "active"
-}
-```
-
-### Create and Update Division (POST | PATCH `/api/v1/divisions` | `/api/v1/divisions/:slug`)
-
-```json
-{
-  "name": "Rajshahi"
-}
-```
-
-### Create and Update District (POST | PATCH `/api/v1/divisions` | `/api/v1/districts/:slug`)
-
-```json
-{
-  "name": "Chapainawabganj",
-  "division": "rajshahi-division"
 }
 ```
 
@@ -303,13 +268,13 @@ git clone https://github.com/asmaulhossain45/B5-Assignment-5.git
 ## 📥 Intall Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## 🚀 Start the server
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 This Project is built for Assignment 3 — Library Management API
