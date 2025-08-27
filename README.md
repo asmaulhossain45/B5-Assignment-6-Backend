@@ -262,7 +262,7 @@ This API enables wallet-based money transactions for **Users**, **Agents**, and 
 ## 📦 Clone The Repo
 
 ```bash
-git clone https://github.com/asmaulhossain45/B5-Assignment-5.git
+git clone https://github.com/asmaulhossain45/B5-Assignment-6-Backend.git
 ```
 
 ## 📥 Intall Dependencies
@@ -277,4 +277,4 @@ pnpm install
 pnpm run dev
 ```
 
-This Project is built for Assignment 3 — Library Management API
+This Project is built for Assignment 6 — Digital Wallet
