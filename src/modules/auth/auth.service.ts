@@ -24,11 +24,10 @@ import sendMail from "../../utils/sendMail";
 import { otpEmailTemplate } from "../../utils/emailTemplate";
 
 const login = async (payload: Partial<IUser>) => {
-  const account = await getAccount({ email: payload.email as string });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Invalid credentials.");
-  }
+  const account = await getAccount({
+    email: payload.email as string,
+    message: "Invalid credentials.",
+  });
 
   const isPasswordMatch = await comparePassword(
     payload.password as string,
@@ -52,14 +51,7 @@ const login = async (payload: Partial<IUser>) => {
 };
 
 const registerUser = async (payload: IUser) => {
-  const isTaken = await isEmailTaken(payload.email);
-
-  if (isTaken) {
-    throw new AppError(
-      HTTP_STATUS.CONFLICT,
-      "An account with this email already exists."
-    );
-  }
+  await isEmailTaken(payload.email);
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -80,27 +72,18 @@ const registerUser = async (payload: IUser) => {
     await createdUser.save({ session });
 
     await session.commitTransaction();
+    await session.endSession();
+
     return createdUser;
   } catch (error) {
     await session.abortTransaction();
-    throw new AppError(
-      HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      "Failed to create account"
-    );
-  } finally {
     await session.endSession();
+    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to create account");
   }
 };
 
 const registerAgent = async (payload: IAgent) => {
-  const isTaken = await isEmailTaken(payload.email);
-
-  if (isTaken) {
-    throw new AppError(
-      HTTP_STATUS.CONFLICT,
-      "An account with this email already exists."
-    );
-  }
+  await isEmailTaken(payload.email);
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -121,29 +104,24 @@ const registerAgent = async (payload: IAgent) => {
     await createdAgent.save({ session });
 
     await session.commitTransaction();
+    await session.endSession();
+
     return createdAgent;
   } catch (error) {
     await session.abortTransaction();
-    throw new AppError(
-      HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      "Failed to register account"
-    );
-  } finally {
     await session.endSession();
+    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to create account");
   }
 };
 
 const registerAdmin = async (payload: IAdmin) => {
-  const isTaken = await isEmailTaken(payload.email);
-
-  if (isTaken) {
-    throw new AppError(
-      HTTP_STATUS.CONFLICT,
-      "An account with this email already exists."
-    );
-  }
+  await isEmailTaken(payload.email);
 
   const createdAdmin = await Admin.create(payload);
+
+  if (!createdAdmin) {
+    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to create account");
+  }
 
   return createdAdmin;
 };
@@ -157,11 +135,7 @@ const setAccessToken = async (refreshToken: string) => {
 
   const { id, email, role } = decoded as JwtPayload;
 
-  const account = await getAccount({ jwtPayload: { id, email, role } });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Invalid refresh token.");
-  }
+  await getAccount({ userId: id });
 
   const accessToken = generateAccessToken({ id, email, role });
 
@@ -173,7 +147,7 @@ const changePassword = async (
   oldPassword: string,
   newPassword: string
 ) => {
-  const account = await getAccount({ jwtPayload: user });
+  const account = await getAccount({ userId: user.id });
 
   const isPasswordMatch = await comparePassword(
     oldPassword,
@@ -185,19 +159,17 @@ const changePassword = async (
   }
 
   account.password = newPassword;
-  await account.save();
+  const updatedAccount = await account.save();
+
+  if (!updatedAccount) {
+    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to change password.");
+  }
+
+  return updatedAccount;
 };
 
 const sendResetOtp = async (email: string) => {
   const account = await getAccount({ email });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, "Account not found.");
-  }
-
-  if (account.isVerified) {
-    throw new AppError(HTTP_STATUS.CONFLICT, "Account is already verified.");
-  }
 
   const otp = generateOtp();
   const hashedOtp = await hashOtp(otp);
@@ -208,31 +180,28 @@ const sendResetOtp = async (email: string) => {
     account.resetOtpExpiryAt = expiresAt;
     const updatedAccount = await account.save();
 
+    if (!updatedAccount) {
+      throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to send otp.");
+    }
+
     await sendMail({
       to: account.email,
-      subject: "Verify your account",
+      subject: "Reset Password OTP",
       html: otpEmailTemplate({
         name: account.name,
         otp,
-        action: "Verify Account",
+        action: "Reset Password",
       }),
     });
 
-    return updatedAccount;
+    return null;
   } catch (error) {
-    throw new AppError(
-      HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      "Failed to send otp."
-    );
+    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to send otp.");
   }
 };
 
 const verifyResetOtp = async (email: string, otp: string) => {
   const account = await getAccount({ email });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, "Account not found.");
-  }
 
   if (!account.resetOtp || !account.resetOtpExpiryAt) {
     throw new AppError(
@@ -254,7 +223,7 @@ const verifyResetOtp = async (email: string, otp: string) => {
     throw new AppError(HTTP_STATUS.BAD_REQUEST, "Invalid OTP.");
   }
 
-  return isMatch;
+  return null;
 };
 
 const resetPassword = async (
@@ -263,10 +232,6 @@ const resetPassword = async (
   newPassword: string
 ) => {
   const account = await getAccount({ email });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, "Account not found.");
-  }
 
   if (!account.resetOtp || !account.resetOtpExpiryAt) {
     throw new AppError(
@@ -293,15 +258,15 @@ const resetPassword = async (
   account.resetOtpExpiryAt = undefined;
   const updatedAccount = await account.save();
 
-  return updatedAccount;
+  if (!updatedAccount) {
+    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to reset password.");
+  }
+
+  return null;
 };
 
 const sendVerifyOtp = async (email: string) => {
   const account = await getAccount({ email });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, "Account not found.");
-  }
 
   if (account.isVerified) {
     throw new AppError(HTTP_STATUS.CONFLICT, "Account is already verified.");
@@ -324,9 +289,8 @@ const sendVerifyOtp = async (email: string) => {
   }
 
   await sendMail({
-    // to: account.email,
-    to: "asmaulhosen33@gmail.com",
-    subject: "Verify your account",
+    to: account.email,
+    subject: "Verify account OTP",
     html: otpEmailTemplate({
       name: account.name,
       otp,
@@ -334,14 +298,11 @@ const sendVerifyOtp = async (email: string) => {
     }),
   });
 
-  return updatedAccount;
+  return null;
 };
 
 const verifyAccount = async (email: string, otp: string) => {
   const account = await getAccount({ email });
-  if (account.isVerified) {
-    throw new AppError(HTTP_STATUS.CONFLICT, "Account is already verified.");
-  }
 
   if (!account.verifyOtp || !account.verifyOtpExpiryAt) {
     throw new AppError(
@@ -373,7 +334,7 @@ const verifyAccount = async (email: string, otp: string) => {
     throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to verify account.");
   }
 
-  return updatedAccount;
+  return null;
 };
 
 export const authService = {

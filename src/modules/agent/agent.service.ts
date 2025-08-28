@@ -1,8 +1,3 @@
-import {
-  TransactionDirection,
-  TransactionType,
-  UserRole,
-} from "../../constants/enums";
 import { Agent } from "./agent.model";
 import { IAgent } from "./agent.interface";
 import AppError from "../../utils/appError";
@@ -12,10 +7,7 @@ import getAccount from "../../shared/getAccount";
 import HTTP_STATUS from "../../constants/httpStatus";
 import { QueryBuilder } from "../../utils/queryBuilder";
 import { Transaction } from "../transaction/transaction.model";
-import executeTransaction from "../../shared/executeTransaction";
-import { ITransactionPayload } from "../transaction/transaction.interface";
 import mongoose, { Types } from "mongoose";
-import { validateTransaction } from "../../utils/validateTransaction";
 
 const getAgentProfile = async (payload: JwtPayload) => {
   const account = await getAccount({ jwtPayload: payload });
@@ -75,58 +67,6 @@ const getCommisionHistory = async (
   return { data: history, meta };
 };
 
-const cashIn = async (amount: number, user: JwtPayload, receiverEmail: string) => {
-  const { sender, receiver } = await validateTransaction({
-    senderEmail: user.email,
-    receiverEmail: receiverEmail,
-    transactionType: TransactionType.CASH_IN,
-  });
-
-  const transactionPayload: ITransactionPayload = {
-    senderWallet: sender.wallet,
-    receiverWallet: receiver.wallet,
-    amount: amount,
-    isCharge: false,
-    type: TransactionType.CASH_IN,
-    directionForSender: TransactionDirection.DEBIT,
-    directionForReceiver: TransactionDirection.CREDIT,
-    initiator: {
-      id: sender.account._id as Types.ObjectId,
-      role: sender.account.role,
-    },
-  };
-
-  const transaction = await executeTransaction(transactionPayload);
-
-  return transaction;
-};
-
-const cashOut = async (amount: number, user: JwtPayload, senderEmail: string) => {
-
-  const {sender, receiver} = await validateTransaction({
-    senderEmail,
-    receiverEmail: user.email,
-    transactionType: TransactionType.CASH_OUT
-  })
-
-  const transactionPayload: ITransactionPayload = {
-    senderWallet: sender.wallet,
-    receiverWallet: receiver.wallet,
-    amount: amount,
-    isCharge: true,
-    agentId: receiver.account?._id,
-    type: TransactionType.CASH_OUT,
-    directionForSender: TransactionDirection.DEBIT,
-    directionForReceiver: TransactionDirection.CREDIT,
-    initiator: {
-      id: receiver.account?._id as Types.ObjectId,
-      role: receiver.account?.role as UserRole,
-    },
-  };
-  const transaction = await executeTransaction(transactionPayload);
-  return transaction;
-};
-
 const updateAgentProfile = async (
   user: JwtPayload,
   payload: Partial<IAgent>
@@ -155,8 +95,6 @@ const updateAgentProfile = async (
 };
 
 export const agentService = {
-  cashIn,
-  cashOut,
   getAgentProfile,
   getAgentWallet,
   getAgentTransactions,

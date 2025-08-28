@@ -4,7 +4,6 @@ import { ZodUserSchema } from "./user.validation";
 import { userController } from "./user.controller";
 import checkAuth from "../../middlewares/checkAuth";
 import validateRequest from "../../middlewares/validateRequest";
-import { ZodTransactionSchema } from "../transaction/transaction.validation";
 import checkStatus from "../../middlewares/checkStatus";
 
 const router = Router();
@@ -28,29 +27,6 @@ router.get(
   userController.getTransactions
 );
 
-router.post(
-  "/add-money",
-  validateRequest(ZodTransactionSchema.addMoney),
-  checkAuth(UserRole.USER),
-  checkStatus([UserStatus.ACTIVE]),
-  userController.addMoney
-);
-
-router.post(
-  "/withdraw",
-  validateRequest(ZodTransactionSchema.withdraw),
-  checkAuth(UserRole.USER),
-  checkStatus([UserStatus.ACTIVE]),
-  userController.withdraw
-);
-
-router.post(
-  "/send-money",
-  validateRequest(ZodTransactionSchema.sendMoney),
-  checkAuth(UserRole.USER),
-  checkStatus([UserStatus.ACTIVE]),
-  userController.sendMoney
-);
 
 router.patch(
   "/me",

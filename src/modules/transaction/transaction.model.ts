@@ -1,7 +1,6 @@
 import { model, Schema } from "mongoose";
 import { ITransaction } from "./transaction.interface";
 import {
-  TransactionDirection,
   TransactionReference,
   TransactionStatus,
   TransactionType,
@@ -10,73 +9,84 @@ import {
 
 const transactionSchema = new Schema<ITransaction>(
   {
-    senderWallet: {
+    from: {
       type: Schema.Types.ObjectId,
-      ref: "Wallet",
+      refPath: "fromModel",
       required: false,
     },
-    receiverWallet: {
-      type: Schema.Types.ObjectId,
-      ref: "Wallet",
-      required: false,
-    },
-    amount: {
-      type: Number,
-      required: true,
-    },
-    charge: {
-      type: Number,
-      default: 0,
-    },
-    agent: {
-      id: {
-        type: Schema.Types.ObjectId,
-        ref: "Agent",
-      },
-      commission: {
-        type: Number,
-      },
-    },
-    transactionId: {
+
+    fromModel: {
       type: String,
+      enum: [UserRole.USER, UserRole.AGENT],
+      required: false,
     },
+
+    to: {
+      type: Schema.Types.ObjectId,
+      refPath: "toModel",
+      required: false,
+    },
+
+    toModel: {
+      type: String,
+      enum: [UserRole.USER, UserRole.AGENT],
+      required: false,
+    },
+
     type: {
       type: String,
       enum: Object.values(TransactionType),
       required: true,
     },
+
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    charge: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    commission: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    transactionId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    agent: {
+      type: Schema.Types.ObjectId,
+      ref: "Agent",
+      required: false,
+    },
+
     status: {
       type: String,
       enum: Object.values(TransactionStatus),
       default: TransactionStatus.PENDING,
       required: true,
     },
-    directionForSender: {
-      type: String,
-      enum: Object.values(TransactionDirection),
-      required: true,
-    },
-    directionForReceiver: {
-      type: String,
-      enum: Object.values(TransactionDirection),
-      required: true,
-    },
-    initiator: {
-      id: {
-        type: Schema.Types.ObjectId,
-        refpath: "initiator.role",
-        required: true,
-      },
-      role: {
-        type: String,
-        enum: Object.values(UserRole),
-        required: true,
-      },
-    },
 
     reference: {
       type: String,
       enum: Object.values(TransactionReference),
+      required: false,
+    },
+
+    notes: {
+      type: String,
+      required: false,
     },
   },
   {

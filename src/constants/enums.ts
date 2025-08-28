@@ -44,7 +44,7 @@ export enum TransactionStatus {
 }
 
 export enum TransactionType {
-  ADD_MONEY = "add-money",
+  DEPOSIT = "deposit",
   WITHDRAW = "withdraw",
   SEND_MONEY = "send-money",
   CASH_IN = "cash-in",

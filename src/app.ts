@@ -8,9 +8,17 @@ import { envConfig } from "./configs/envConfig";
 
 const app: Application = express();
 
+const allowedOrigins = envConfig.BASE_URL.FRONTEND_URL.split(",");
+
 app.use(
   cors({
-    origin: envConfig.BASE_URL.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );

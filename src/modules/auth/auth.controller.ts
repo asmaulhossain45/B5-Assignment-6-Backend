@@ -12,7 +12,6 @@ const login = catchAsync(async (req: Request, res: Response) => {
 
   setCookies({
     res,
-    role: result.account.role,
     accessToken: result.accessToken,
     refreshToken: result.refreshToken,
   });
@@ -21,13 +20,21 @@ const login = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: 200,
     message: `Logged in successfully`,
+    data: result.account,
   });
 });
 
 const logout = catchAsync(async (req: Request, res: Response) => {
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
-  res.clearCookie("role");
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
 
   sendResponse(res, {
     success: true,
@@ -107,57 +114,62 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 
 const sendResetOtp = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.body;
-  await authService.sendResetOtp(email);
+  const result = await authService.sendResetOtp(email);
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Reset password OTP sent successfully",
+    data: result,
   });
 });
 
 const verifyResetOtp = catchAsync(async (req: Request, res: Response) => {
   const { otp, email } = req.body;
+  const result = await authService.verifyResetOtp(email, otp);
 
-  await authService.verifyResetOtp(email, otp);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Reset OTP verified successfully",
+    data: result,
   });
 });
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const { otp, email, newPassword } = req.body;
-  await authService.resetPassword(email, otp, newPassword);
+  const result = await authService.resetPassword(email, otp, newPassword);
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Password reset successfully",
+    data: result,
   });
 });
 
 const sendVerifyOtp = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload;
-  await authService.sendVerifyOtp(user.email);
+  const result = await authService.sendVerifyOtp(user.email);
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Verify account OTP sent successfully",
+    data: result,
   });
 });
 
 const verifyAccount = catchAsync(async (req: Request, res: Response) => {
   const { otp } = req.body;
   const { email } = req.user as JwtPayload;
-  await authService.verifyAccount(email, otp);
-  
+  const result = await authService.verifyAccount(email, otp);
+
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Account verified successfully",
+    data: result,
   });
 });
 

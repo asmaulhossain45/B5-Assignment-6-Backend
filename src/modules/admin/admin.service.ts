@@ -116,7 +116,6 @@ const getAllTransactions = async (query: Record<string, string>) => {
 };
 
 const updateUserStatus = async (userId: Types.ObjectId, status: UserStatus) => {
-  console.log(userId, status);
   const account = await getAccount({ userId });
   const { role, _id } = account;
 

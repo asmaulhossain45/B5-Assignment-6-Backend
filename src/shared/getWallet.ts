@@ -1,43 +1,47 @@
 import { Types } from "mongoose";
-import getAccount from "./getAccount";
-import AppError from "../utils/appError";
-import { JwtPayload } from "../interfaces";
-import HTTP_STATUS from "../constants/httpStatus";
-import { Wallet } from "../modules/wallet/wallet.model";
 import { IWallet } from "../modules/wallet/wallet.interface";
+import getAccount from "./getAccount";
+import { Wallet } from "../modules/wallet/wallet.model";
+import AppError from "../utils/appError";
+import HTTP_STATUS from "../constants/httpStatus";
 
-interface GetWalletPayload {
-  walletId?: Types.ObjectId;
-  ownerId?: Types.ObjectId;
+interface Props {
+  userId?: Types.ObjectId;
+  walletId: Types.ObjectId;
+  phone?: string;
   email?: string;
-  jwtPayload?: JwtPayload;
+  message?: string;
 }
 
 const getWallet = async ({
   walletId,
-  ownerId,
+  userId,
   email,
-  jwtPayload,
-}: GetWalletPayload): Promise<IWallet> => {
+  phone,
+  message,
+}: Props): Promise<IWallet> => {
   let wallet: IWallet | null = null;
 
-  if (jwtPayload) {
-    const account = await getAccount({ jwtPayload });
-    wallet = await Wallet.findOne({ owner: account._id });
-  } else if (walletId) {
+  if (walletId) {
     wallet = await Wallet.findById(walletId);
-  } else if (ownerId) {
-    wallet = await Wallet.findOne({ owner: ownerId });
-  } else if (email) {
-    const account = await getAccount({ email });
-    wallet = await Wallet.findOne({ owner: account._id });
+    if (wallet) return wallet;
   }
 
-  if (!wallet) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, "Wallet not found.");
+  if (userId) {
+    wallet = await Wallet.findOne({ owner: userId });
+    if (wallet) return wallet;
   }
 
-  return wallet;
+  if (email || phone) {
+    const account = await getAccount({ email, phone });
+
+    if (account && account.wallet) {
+      wallet = await Wallet.findById(account.wallet);
+      if (wallet) return wallet;
+    }
+  }
+
+  throw new AppError(HTTP_STATUS.NOT_FOUND, message || "Wallet not found.");
 };
 
 export default getWallet;

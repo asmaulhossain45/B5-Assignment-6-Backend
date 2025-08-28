@@ -1,167 +1,117 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
+import {
+  TransactionReference,
+  TransactionStatus,
+  TransactionType,
+  UserRole,
+} from "../constants/enums";
 import AppError from "../utils/appError";
-import { envConfig } from "../configs/envConfig";
-import getTransactionId from "./getTransactionId";
 import HTTP_STATUS from "../constants/httpStatus";
-import { Agent } from "../modules/agent/agent.model";
-import { TransactionStatus } from "../constants/enums";
+import { Commission } from "../modules/commission/commission.model";
 import { Wallet } from "../modules/wallet/wallet.model";
+import { ITransaction } from "../modules/transaction/transaction.interface";
 import { Transaction } from "../modules/transaction/transaction.model";
-import { ITransactionPayload } from "../modules/transaction/transaction.interface";
+import getTransactionId from "./getTransactionId";
 
-const executeTransaction = async (payload: ITransactionPayload) => {
-  const {
-    senderWallet,
-    receiverWallet,
-    amount,
-    isCharge,
-    agentId,
+export interface ExecuteTransactionOptions {
+  type: TransactionType;
+  from?: Types.ObjectId;
+  fromModel?: UserRole.USER | UserRole.AGENT;
+  to?: Types.ObjectId;
+  toModel?: UserRole.USER | UserRole.AGENT;
+  agent?: Types.ObjectId;
+  amount: number;
+  reference?: TransactionReference;
+  notes?: string;
+}
+
+export const executeTransaction = async (
+  options: ExecuteTransactionOptions
+) => {
+  const { type, from, fromModel, to, toModel, agent, amount, reference, notes } = options;
+  const transactionId = getTransactionId();
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  let transactionData: Partial<ITransaction> = {
+    from,
+    fromModel,
+    to,
+    toModel,
+    agent,
     type,
-    directionForSender,
-    directionForReceiver,
-    initiator,
+    amount,
+    charge: 0,
+    commission: 0,
+    status: TransactionStatus.FAILED,
+    transactionId,
     reference,
-  } = payload;
-
-  let sender = null;
-  let receiver = null;
-  let totalCharge = 0;
-  let totalDebit = amount;
-  let agentInfo: { id: Types.ObjectId; commission: number } | null = null;
-
-  const transactionId = await getTransactionId();
-  const session = await Transaction.startSession();
+    notes,
+  };
 
   try {
-    session.startTransaction();
-
-    if (isCharge) {
-      const systemWallet = await Wallet.findOne({ isSystem: true }).session(
-        session
+    if (amount <= 0) {
+      throw new AppError(
+        HTTP_STATUS.BAD_REQUEST,
+        "Amount must be greater than 0"
       );
-
-      if (!systemWallet) {
-        throw new AppError(HTTP_STATUS.NOT_FOUND, "System wallet not found.");
-      }
-
-      const systemCharge = amount * (envConfig.PERCENTAGE.SYSTEM_CHARGE / 100);
-
-      systemWallet.balance += systemCharge;
-      totalDebit += systemCharge;
-
-      totalCharge += systemCharge;
-      await systemWallet.save({ session: session });
     }
 
-    if (agentId) {
-      const agentAccount = await Agent.findById(agentId).session(session);
+    const systemConfig = await Commission.findOne({
+      type,
+      isActive: true,
+    }).session(session);
 
-      if (!agentAccount) {
-        throw new AppError(HTTP_STATUS.NOT_FOUND, "Agent not found.");
-      }
+    const charge = systemConfig?.charge || 0;
+    const commission = systemConfig?.commission || 0;
 
-      const agentWallet = await Wallet.findById(agentAccount.wallet).session(
-        session
-      );
+    transactionData.charge = charge;
+    transactionData.commission = commission;
 
-      if (!agentWallet) {
-        throw new AppError(HTTP_STATUS.NOT_FOUND, "Agent wallet not found.");
-      }
-
-      const commission = amount * (envConfig.PERCENTAGE.AGENT_COMMISION / 100);
-      agentWallet.balance += commission;
-
-      totalDebit += commission;
-      totalCharge += commission;
-
-      await agentWallet.save({ session: session });
-
-      agentInfo = {
-        id: agentAccount._id,
-        commission,
-      };
-    }
-
-    if (senderWallet) {
-      sender = await Wallet.findById(senderWallet).session(session);
-      if (!sender) {
-        throw new AppError(HTTP_STATUS.NOT_FOUND, "Sender wallet not found.");
-      }
-
-      if (sender.balance < totalDebit) {
-        throw new AppError(HTTP_STATUS.BAD_REQUEST, "Insufficient balance.");
-      }
-
-      sender.balance -= totalDebit;
-      await sender.save({ session: session });
-    }
-
-    if (receiverWallet) {
-      receiver = await Wallet.findById(receiverWallet).session(session);
-      if (!receiver) {
-        throw new AppError(HTTP_STATUS.NOT_FOUND, "Receiver wallet not found.");
-      }
-
-      receiver.balance += amount;
-      await receiver.save({ session: session });
-    }
-
-    const [transaction] = await Transaction.create(
-      [
-        {
-          senderWallet,
-          receiverWallet,
-          amount,
-          charge: totalCharge,
-          agent: agentInfo,
-          transactionId,
-          type,
-          status: TransactionStatus.COMPLETED,
-          directionForSender,
-          directionForReceiver,
-          initiator,
-          reference,
-        },
-      ],
-      {
-        session,
-      }
+    const fromWallet = from
+      ? await Wallet.findOne({ owner: from }).session(session)
+      : null;
+    const toWallet = to
+      ? await Wallet.findOne({ owner: to }).session(session)
+      : null;
+    const agentWallet = agent
+      ? await Wallet.findOne({ owner: agent }).session(session)
+      : null;
+    const systemWallet = await Wallet.findOne({ isSystem: true }).session(
+      session
     );
 
-    await session.commitTransaction();
+    if (fromWallet && fromWallet.balance < amount + charge + commission) {
+      throw new AppError(HTTP_STATUS.BAD_REQUEST, "Insufficient balance.");
+    }
 
-    return transaction;
-  } catch (error) {
-    await session.abortTransaction();
+    if (fromWallet) fromWallet.balance -= amount + charge + commission;
+    if (toWallet) toWallet.balance += amount;
+    if (agentWallet) agentWallet.balance += commission;
+    if (systemWallet) systemWallet.balance += charge;
 
-    await Transaction.create([
-      {
-        senderWallet,
-        receiverWallet,
-        amount,
-        charge: totalCharge,
-        agent: agentInfo,
-        transactionId,
-        type,
-        status: TransactionStatus.FAILED,
-        directionForSender,
-        directionForReceiver,
-        initiator,
-        reference,
-      },
+    await Promise.all([
+      fromWallet?.save({ session }),
+      toWallet?.save({ session }),
+      agentWallet?.save({ session }),
+      systemWallet?.save({ session }),
     ]);
 
-    if (error instanceof AppError) {
-      throw error;
-    }
+    transactionData.status = TransactionStatus.COMPLETED;
 
-    throw new AppError(
-      HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      "Failed to execute transaction."
-    );
-  } finally {
-    await session.endSession();
+    const transaction = await Transaction.create([transactionData], {
+      session,
+    });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return transaction[0];
+  } catch (error) {
+    await Transaction.create(transactionData);
+
+    await session.abortTransaction();
+    session.endSession();
+    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Transaction failed.");
   }
 };
-
-export default executeTransaction;

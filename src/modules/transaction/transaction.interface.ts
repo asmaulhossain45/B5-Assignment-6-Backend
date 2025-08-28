@@ -1,6 +1,5 @@
-import { Types } from "mongoose";
+import { ObjectId, Types } from "mongoose";
 import {
-  TransactionDirection,
   TransactionReference,
   TransactionStatus,
   TransactionType,
@@ -9,52 +8,25 @@ import {
 
 export interface ITransaction {
   _id?: Types.ObjectId;
+  from?: Types.ObjectId;
+  fromModel?: UserRole.USER | UserRole.AGENT;
 
-  senderWallet?: Types.ObjectId;
-  receiverWallet?: Types.ObjectId;
+  to?: Types.ObjectId;
+  toModel?: UserRole.USER | UserRole.AGENT;
+
+  type: TransactionType;
 
   amount: number;
   charge: number;
-  agent?: {
-    id: Types.ObjectId;
-    commission: number;
-  };
+  commission: number;
 
-  transactionId?: string;
-  type: TransactionType;
+  transactionId: string;
+  agent?: Types.ObjectId;
   status: TransactionStatus;
 
-  directionForSender: TransactionDirection;
-  directionForReceiver: TransactionDirection;
-
-  initiator: {
-    id: Types.ObjectId;
-    role: UserRole;
-  };
-
   reference?: TransactionReference;
+  notes?: string;
 
   createdAt?: Date;
   updatedAt?: Date;
-}
-
-export interface ITransactionPayload {
-  senderWallet?: Types.ObjectId;
-  receiverWallet?: Types.ObjectId;
-
-  amount: number;
-  isCharge?: boolean;
-  agentId?: Types.ObjectId;
-
-  type: TransactionType;
-
-  directionForSender: TransactionDirection;
-  directionForReceiver: TransactionDirection;
-
-  initiator: {
-    id: Types.ObjectId;
-    role: UserRole;
-  };
-
-  reference?: TransactionReference;
 }

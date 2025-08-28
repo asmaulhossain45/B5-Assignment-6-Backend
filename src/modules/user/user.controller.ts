@@ -46,45 +46,6 @@ const getTransactions = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const addMoney = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as JwtPayload;
-  const { amount, reference } = req.body;
-  const result = await userService.addMoney(amount, reference, user);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: HTTP_STATUS.OK,
-    message: "Money added successfully",
-    data: result,
-  });
-});
-
-const withdraw = catchAsync(async (req: Request, res: Response) => {
-  const { amount, reference } = req.body;
-  const user = req.user as JwtPayload;
-  const result = await userService.withdraw(amount, reference, user);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: HTTP_STATUS.OK,
-    message: "Money withdraw successfully",
-    data: result,
-  });
-});
-
-const sendMoney = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as JwtPayload;
-  const { amount, receiver: receiverEmail } = req.body;
-  const result = await userService.sendMoney(amount, user, receiverEmail);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: HTTP_STATUS.OK,
-    message: "Send money successfully",
-    data: result,
-  });
-});
-
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload;
   const body = req.body as Partial<IUser>;
@@ -103,8 +64,5 @@ export const userController = {
   getUserProfile,
   getUserWallet,
   getTransactions,
-  addMoney,
-  withdraw,
-  sendMoney,
   updateProfile,
 };

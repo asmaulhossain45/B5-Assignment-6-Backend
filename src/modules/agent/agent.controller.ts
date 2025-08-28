@@ -61,32 +61,6 @@ const getCommisionHistory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const cashIn = catchAsync(async (req: Request, res: Response) => {
-  const { amount, receiver } = req.body;
-  const user = req.user as JwtPayload;
-  const result = await agentService.cashIn(amount, user, receiver);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: HTTP_STATUS.OK,
-    message: "Cash in successfully",
-    data: result,
-  });
-});
-
-const cashOut = catchAsync(async (req: Request, res: Response) => {
-  const { amount, sender } = req.body;
-  const user = req.user as JwtPayload;
-  const result = await agentService.cashOut(amount, user, sender);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: HTTP_STATUS.OK,
-    message: "Agent withdraw successfully",
-    data: result,
-  });
-});
-
 const updateAgentProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload;
   const body = req.body as Partial<IAgent>;
@@ -106,7 +80,5 @@ export const agentController = {
   getAgentWallet,
   getAgentTransactions,
   getCommisionHistory,
-  cashIn,
-  cashOut,
   updateAgentProfile,
 };

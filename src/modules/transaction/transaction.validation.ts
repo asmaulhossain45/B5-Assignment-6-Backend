@@ -1,38 +1,23 @@
 import z from "zod";
-import { TransactionReference } from "../../constants/enums";
+import { TransactionType } from "../../constants/enums";
 
-const amountSchema = z.number().min(1, { message: "Amount must be positive" });
-const referenceSchema = z.nativeEnum(TransactionReference, {message: "Reference is required"});
+const reference = z.enum(Object.values(TransactionType));
+const notes = z.string().optional();
 
-const addMoney = z.object({
-  amount: amountSchema,
-  reference: referenceSchema,
-});
+const userDeposit = z.object({});
 
-const withdraw = z.object({
-  amount: amountSchema,
-  reference: referenceSchema,
-});
+const userWithdraw = z.object({});
 
-const sendMoney = z.object({
-  amount: amountSchema,
-  receiver: z.string().min(1, { message: "Receiver ID is required" }),
-});
+const userSendMoney = z.object({});
 
-const cashIn = z.object({
-  amount: amountSchema,
-  receiver: z.string().min(1, { message: "Receiver ID is required" }),
-});
+const agentAddMoney = z.object({});
 
-const cashOut = z.object({
-  amount: amountSchema,
-  sender: z.string().min(1, { message: "Sender ID is required" }),
-});
+const agentWithdraw = z.object({});
 
 export const ZodTransactionSchema = {
-  addMoney,
-  withdraw,
-  sendMoney,
-  cashIn,
-  cashOut,
+  userDeposit,
+  userWithdraw,
+  userSendMoney,
+  agentAddMoney,
+  agentWithdraw,
 };

@@ -1,19 +1,13 @@
 import { Router } from "express";
-import { UserRole, UserStatus } from "../../constants/enums";
+import { UserRole } from "../../constants/enums";
 import checkAuth from "../../middlewares/checkAuth";
 import { agentController } from "./agent.controller";
 import validateRequest from "../../middlewares/validateRequest";
-import { ZodTransactionSchema } from "../transaction/transaction.validation";
 import { ZodAgentSchema } from "./agent.validation";
-import checkStatus from "../../middlewares/checkStatus";
 
 const router = Router();
 
-router.get(
-  "/me",
-  checkAuth(UserRole.AGENT),
-  agentController.getAgentProfile
-);
+router.get("/me", checkAuth(UserRole.AGENT), agentController.getAgentProfile);
 
 router.get(
   "/wallet",
@@ -38,22 +32,6 @@ router.patch(
   validateRequest(ZodAgentSchema.update),
   checkAuth(UserRole.AGENT),
   agentController.updateAgentProfile
-);
-
-router.post(
-  "/cash-in",
-  validateRequest(ZodTransactionSchema.cashIn),
-  checkStatus([UserStatus.ACTIVE]),
-  checkAuth(UserRole.AGENT),
-  agentController.cashIn
-);
-
-router.post(
-  "/cash-out",
-  validateRequest(ZodTransactionSchema.cashOut),
-  checkStatus([UserStatus.ACTIVE]),
-  checkAuth(UserRole.AGENT),
-  agentController.cashOut
 );
 
 export const agentRoutes = router;

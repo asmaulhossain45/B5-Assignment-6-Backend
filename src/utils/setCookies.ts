@@ -13,24 +13,19 @@ export const setCookies = ({
   accessToken,
   refreshToken,
 }: IAuthCookies) => {
-    if (role) {
-    res.cookie("role", role, {
-      httpOnly: false,
-      secure: false,
-    });
-  }
-
   if (accessToken) {
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
+      sameSite: "none",
     });
   }
 
   if (refreshToken) {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
+      sameSite: "none",
     });
   }
 };
