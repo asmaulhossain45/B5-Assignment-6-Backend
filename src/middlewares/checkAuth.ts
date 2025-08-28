@@ -27,16 +27,9 @@ const checkAuth =
           "Invalid access token. Please logged in and try again."
         );
       }
-      const { id, email, role } = decoded as JwtPayload;
+      const { id, role } = decoded as JwtPayload;
 
-      const account = await getAccount({ jwtPayload: { id, email, role } });
-
-      if (!account) {
-        throw new AppError(
-          HTTP_STATUS.UNAUTHORIZED,
-          "Account not found. Please logged in and try again."
-        );
-      }
+      await getAccount({ userId: id });
 
       if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
         throw new AppError(

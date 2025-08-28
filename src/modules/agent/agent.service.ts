@@ -10,12 +10,12 @@ import { Transaction } from "../transaction/transaction.model";
 import mongoose, { Types } from "mongoose";
 
 const getAgentProfile = async (payload: JwtPayload) => {
-  const account = await getAccount({ jwtPayload: payload });
+  const account = await getAccount({ userId: payload.id });
   return account;
 };
 
 const getAgentWallet = async (payload: JwtPayload) => {
-  const wallet = await getWallet({ jwtPayload: payload });
+  const wallet = await getWallet({ userId: payload.id });
   return wallet;
 };
 
@@ -23,13 +23,13 @@ const getAgentTransactions = async (
   user: JwtPayload,
   query: Record<string, string>
 ) => {
-  const wallet = await getWallet({ jwtPayload: user });
+  const wallet = await getWallet({ userId: user.id });
   const walletId = wallet._id;
 
   const searchableFields = ["type", "status"];
 
   const baseQuery = Transaction.find({
-    $or: [{ senderWallet: walletId }, { receiverWallet: walletId }],
+    $or: [{ from: walletId }, { to: walletId }],
   });
 
   const queryBuilder = new QueryBuilder(baseQuery, query)
@@ -46,13 +46,13 @@ const getAgentTransactions = async (
 };
 
 const getCommisionHistory = async (
-  id: string | Types.ObjectId,
+  user: JwtPayload,
   query: Record<string, string>
 ) => {
-  const objectId = new mongoose.Types.ObjectId(id);
+  const objectId = new mongoose.Types.ObjectId(user.id);
   const baseQuery = Transaction.find({
-    "agent.id": objectId,
-    "agent.commission": { $gt: 0 },
+    agent: objectId,
+    commission: { $gt: 0 },
   });
 
   const querybuilder = new QueryBuilder(baseQuery, query)
@@ -72,12 +72,7 @@ const updateAgentProfile = async (
   payload: Partial<IAgent>
 ) => {
   const userId = user.id;
-
-  const account = await getAccount({ jwtPayload: user });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, "Account not found.");
-  }
+  await getAccount({ userId });
 
   const updatedAgent = await Agent.findByIdAndUpdate(
     userId,

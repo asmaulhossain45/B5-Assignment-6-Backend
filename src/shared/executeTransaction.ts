@@ -28,7 +28,17 @@ export interface ExecuteTransactionOptions {
 export const executeTransaction = async (
   options: ExecuteTransactionOptions
 ) => {
-  const { type, from, fromModel, to, toModel, agent, amount, reference, notes } = options;
+  const {
+    type,
+    from,
+    fromModel,
+    to,
+    toModel,
+    agent,
+    amount,
+    reference,
+    notes,
+  } = options;
   const transactionId = getTransactionId();
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -62,11 +72,14 @@ export const executeTransaction = async (
       isActive: true,
     }).session(session);
 
-    const charge = systemConfig?.charge || 0;
-    const commission = systemConfig?.commission || 0;
+    const chargePercentage = systemConfig?.charge || 0;
+    const commissionPercentage = systemConfig?.commission || 0;
 
-    transactionData.charge = charge;
-    transactionData.commission = commission;
+    const chargeAmount = (amount * chargePercentage) / 100;
+    const commissionAmount = (amount * commissionPercentage) / 100;
+
+    transactionData.charge = chargeAmount;
+    transactionData.commission = commissionAmount;
 
     const fromWallet = from
       ? await Wallet.findOne({ owner: from }).session(session)
@@ -81,14 +94,18 @@ export const executeTransaction = async (
       session
     );
 
-    if (fromWallet && fromWallet.balance < amount + charge + commission) {
+    if (
+      fromWallet &&
+      fromWallet.balance < amount + chargeAmount + commissionAmount
+    ) {
       throw new AppError(HTTP_STATUS.BAD_REQUEST, "Insufficient balance.");
     }
 
-    if (fromWallet) fromWallet.balance -= amount + charge + commission;
+    if (fromWallet)
+      fromWallet.balance -= amount + chargeAmount + commissionAmount;
     if (toWallet) toWallet.balance += amount;
-    if (agentWallet) agentWallet.balance += commission;
-    if (systemWallet) systemWallet.balance += charge;
+    if (agentWallet) agentWallet.balance += commissionAmount;
+    if (systemWallet) systemWallet.balance += chargeAmount;
 
     await Promise.all([
       fromWallet?.save({ session }),

@@ -14,11 +14,7 @@ const checkStatus = (allowedStatus: UserStatus[]) => {
         throw new AppError(HTTP_STATUS.UNAUTHORIZED, "User not Authenticated");
       }
 
-      const account = await getAccount({ jwtPayload: user });
-
-      if (!account) {
-        throw new AppError(HTTP_STATUS.NOT_FOUND, "Account not found");
-      }
+      const account = await getAccount({ userId: user.id });
 
       if (!allowedStatus.includes(account.status)) {
         throw new AppError(

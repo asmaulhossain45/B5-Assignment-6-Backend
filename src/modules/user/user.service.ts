@@ -9,13 +9,13 @@ import { Transaction } from "../transaction/transaction.model";
 import { IUser } from "./user.interface";
 
 const getUserProfile = async (payload: JwtPayload) => {
-  const account = await getAccount({ jwtPayload: payload });
+  const account = await getAccount({ userId: payload.id });
 
   return account;
 };
 
 const getUserWallet = async (payload: JwtPayload) => {
-  const wallet = await getWallet({ jwtPayload: payload });
+  const wallet = await getWallet({ userId: payload.id });
 
   return wallet;
 };
@@ -24,13 +24,12 @@ const getTransactions = async (
   user: JwtPayload,
   query: Record<string, string>
 ) => {
-  const wallet = await getWallet({ jwtPayload: user });
+  const wallet = await getWallet({ userId: user.id });
   const walletId = wallet._id;
-
   const searchableFields = ["type", "status"];
 
   const baseQuery = Transaction.find({
-    $or: [{ senderWallet: walletId }, { receiverWallet: walletId }],
+    $or: [{ from: walletId }, { to: walletId }],
   });
 
   const queryBuilder = new QueryBuilder(baseQuery, query)
@@ -48,12 +47,7 @@ const getTransactions = async (
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const userId = user.id;
-
-  const account = await getAccount({ jwtPayload: user });
-
-  if (!account) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, "User not found.");
-  }
+  await getAccount({ userId });
 
   const updatedUser = await User.findByIdAndUpdate(
     userId,

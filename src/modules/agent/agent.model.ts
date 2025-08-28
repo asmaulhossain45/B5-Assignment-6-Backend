@@ -1,40 +1,12 @@
 import { model, Schema } from "mongoose";
 import { hashPassword } from "../../utils/bcrypt";
-import { Gender, UserRole, UserStatus } from "../../constants/enums";
+import { UserRole } from "../../constants/enums";
 import { IAgent } from "./agent.interface";
+import { baseModelFields } from "../../shared/baseModelFields";
 
 const agentSchema = new Schema<IAgent>(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-      immutable: true,
-      index: true,
-    },
-
-    password: {
-      type: String,
-      required: true,
-    },
-
-    dob: { type: Date },
-
-    phone: { type: String, unique: true, sparse: true },
-
-    gender: {
-      type: String,
-      enum: Object.values(Gender),
-      lowercase: true,
-    },
+    ...baseModelFields,
 
     role: {
       type: String,
@@ -49,35 +21,11 @@ const agentSchema = new Schema<IAgent>(
       maxlength: 50,
     },
 
-    location: {
-      division: { type: String },
-      district: { type: String },
-      address: { type: String },
-    },
-
     wallet: {
       type: Schema.Types.ObjectId,
       ref: "Wallet",
       index: true,
     },
-
-    status: {
-      type: String,
-      enum: Object.values(UserStatus),
-      default: UserStatus.PENDING,
-      index: true,
-    },
-
-    isVerified: {
-      type: Boolean,
-      default: false,
-      index: true,
-    },
-
-    resetOtp: { type: String },
-    verifyOtp: { type: String },
-    resetOtpExpiryAt: { type: Date },
-    verifyOtpExpiryAt: { type: Date },
 
     isApproved: {
       type: Boolean,

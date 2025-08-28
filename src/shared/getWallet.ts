@@ -7,7 +7,7 @@ import HTTP_STATUS from "../constants/httpStatus";
 
 interface Props {
   userId?: Types.ObjectId;
-  walletId: Types.ObjectId;
+  walletId?: Types.ObjectId;
   phone?: string;
   email?: string;
   message?: string;

@@ -8,7 +8,6 @@ import { IUser } from "../user/user.interface";
 import { Wallet } from "../wallet/wallet.model";
 import { IAgent } from "../agent/agent.interface";
 import { IAdmin } from "../admin/admin.interface";
-import isEmailTaken from "../../utils/isEmailTaken";
 import HTTP_STATUS from "../../constants/httpStatus";
 import { WalletType } from "../../constants/enums";
 import { JwtPayload } from "../../interfaces";
@@ -22,18 +21,19 @@ import getAccount from "../../shared/getAccount";
 import { generateOtp, hashOtp, verifyOtp } from "../../utils/otp";
 import sendMail from "../../utils/sendMail";
 import { otpEmailTemplate } from "../../utils/emailTemplate";
+import checkUniqueAccount from "../../utils/checkUniqueAccount";
 
 const login = async (payload: Partial<IUser>) => {
   const account = await getAccount({
     email: payload.email as string,
     message: "Invalid credentials.",
   });
-
+  
   const isPasswordMatch = await comparePassword(
     payload.password as string,
     account.password as string
   );
-
+  
   if (!isPasswordMatch) {
     throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Invalid credentials.");
   }
@@ -51,7 +51,7 @@ const login = async (payload: Partial<IUser>) => {
 };
 
 const registerUser = async (payload: IUser) => {
-  await isEmailTaken(payload.email);
+  await checkUniqueAccount({ email: payload.email });
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -83,7 +83,7 @@ const registerUser = async (payload: IUser) => {
 };
 
 const registerAgent = async (payload: IAgent) => {
-  await isEmailTaken(payload.email);
+  await checkUniqueAccount({ email: payload.email });
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -115,7 +115,7 @@ const registerAgent = async (payload: IAgent) => {
 };
 
 const registerAdmin = async (payload: IAdmin) => {
-  await isEmailTaken(payload.email);
+  await checkUniqueAccount({ email: payload.email });
 
   const createdAdmin = await Admin.create(payload);
 

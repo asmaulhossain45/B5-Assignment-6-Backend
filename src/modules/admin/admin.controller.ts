@@ -108,11 +108,10 @@ const updateAdminProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
-  const { userId: stringId } = req.params;
+  const { email } = req.params;
   const { status } = req.body;
 
-  const userId = new Types.ObjectId(stringId);
-  const result = await adminService.updateUserStatus(userId, status);
+  const result = await adminService.updateUserStatus(email, status);
 
   sendResponse(res, {
     success: true,
@@ -139,12 +138,12 @@ const updateWalletStatus = catchAsync(async (req: Request, res: Response) => {
 const updateAgentApprovalStatus = catchAsync(
   async (req: Request, res: Response) => {
     const admin = req.user as JwtPayload;
-    const { agentId } = req.params;
+    const { email } = req.params;
     const { isApproved } = req.body;
 
     const result = await adminService.updateAgentApprovalStatus(
       admin,
-      agentId,
+      email,
       isApproved
     );
 

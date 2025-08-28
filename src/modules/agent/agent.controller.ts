@@ -7,19 +7,18 @@ import { agentService } from "./agent.service";
 import { IAgent } from "./agent.interface";
 
 const getAgentProfile = catchAsync(async (req: Request, res: Response) => {
-  const agent = await agentService.getAgentProfile(req.user as JwtPayload);
+  const result = await agentService.getAgentProfile(req.user as JwtPayload);
 
   sendResponse(res, {
     success: true,
     statusCode: HTTP_STATUS.OK,
     message: "Agent profile retrieved successfully",
-    data: agent,
+    data: result,
   });
 });
 
 const getAgentWallet = catchAsync(async (req: Request, res: Response) => {
-  const agent = req.user as JwtPayload;
-  const result = await agentService.getAgentWallet(agent);
+  const result = await agentService.getAgentWallet(req.user as JwtPayload);
 
   sendResponse(res, {
     success: true,
@@ -31,9 +30,8 @@ const getAgentWallet = catchAsync(async (req: Request, res: Response) => {
 
 const getAgentTransactions = catchAsync(async (req: Request, res: Response) => {
   const query = req.query;
-  const user = req.user as JwtPayload;
   const result = await agentService.getAgentTransactions(
-    user,
+    req.user as JwtPayload,
     query as Record<string, string>
   );
 
@@ -47,10 +45,10 @@ const getAgentTransactions = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCommisionHistory = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.user as JwtPayload;
+  const user = req.user as JwtPayload;
   const query = req.query as Record<string, string>;
 
-  const result = await agentService.getCommisionHistory(id, query);
+  const result = await agentService.getCommisionHistory(user, query);
 
   sendResponse(res, {
     success: true,

@@ -15,7 +15,7 @@ export interface IUser {
   role: UserRole.USER;
   location?: ILocation;
 
-  wallet?: Types.ObjectId;
+  wallet: Types.ObjectId;
 
   status: UserStatus;
   isVerified: boolean;

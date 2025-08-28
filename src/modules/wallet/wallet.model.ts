@@ -12,22 +12,28 @@ const walletSchema = new Schema<IWallet>(
       unique: true,
       index: true,
     },
+
     balance: {
       type: Number,
       required: true,
       default: 50,
+      min: 0,
     },
+
     status: {
       type: String,
       enum: Object.values(WalletStatus),
       default: WalletStatus.ACTIVE,
       required: true,
+      index: true,
     },
+
     type: {
       type: String,
       enum: Object.values(WalletType),
       required: true,
     },
+
     isSystem: {
       type: Boolean,
       default: false,

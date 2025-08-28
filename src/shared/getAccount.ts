@@ -20,29 +20,27 @@ const getAccount = async ({
   phone,
   message,
 }: Props) => {
-  let account: any = null;
-
   if (userId) {
-    account = await User.findById(userId);
-    if (account) return account;
+    const userAccount = await User.findById(userId);
+    if (userAccount) return userAccount;
 
-    account = await Agent.findById(userId);
-    if (account) return account;
+    const agentAccount = await Agent.findById(userId);
+    if (agentAccount) return agentAccount;
 
-    account = await Admin.findById(userId);
-    if (account) return account;
+    const adminAccount = await Admin.findById(userId);
+    if (adminAccount) return adminAccount;
   }
 
   if (walletId) {
-    const userWallet = await User.findOne({ wallet: walletId });
-    if (userWallet) return userWallet;
+    const userAccount = await User.findOne({ wallet: walletId });
+    if (userAccount) return userAccount;
 
-    const agentWallet = await Agent.findOne({ wallet: walletId });
-    if (agentWallet) return agentWallet;
+    const agentAccount = await Agent.findOne({ wallet: walletId });
+    if (agentAccount) return agentAccount;
   }
 
   if (email) {
-    account =
+    const account =
       (await User.findOne({ email: email.toLowerCase() })) ||
       (await Agent.findOne({ email: email.toLowerCase() })) ||
       (await Admin.findOne({ email: email.toLowerCase() }));
@@ -50,7 +48,7 @@ const getAccount = async ({
   }
 
   if (phone) {
-    account =
+    const account =
       (await User.findOne({ phone })) ||
       (await Agent.findOne({ phone })) ||
       (await Admin.findOne({ phone }));

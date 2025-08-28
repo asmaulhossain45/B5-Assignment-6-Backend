@@ -49,7 +49,7 @@ router.get(
 
 // Status Update
 router.patch(
-  "/users/:userId/status",
+  "/users/:email/status",
   validateRequest(ZodAdminSchema.updateUserStatus),
   checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   adminController.updateUserStatus
@@ -64,7 +64,7 @@ router.patch(
 );
 
 router.patch(
-  "/agents/:agentId/approval",
+  "/agents/:email/approval",
   validateRequest(ZodAdminSchema.updateAgentApprovalStatus),
   checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   adminController.updateAgentApprovalStatus

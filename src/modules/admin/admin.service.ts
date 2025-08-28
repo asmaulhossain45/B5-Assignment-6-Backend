@@ -13,7 +13,7 @@ import { IAdmin } from "./admin.interface";
 import { Admin } from "./admin.model";
 
 const getAdminProfile = async (payload: JwtPayload) => {
-  const account = await getAccount({ jwtPayload: payload });
+  const account = await getAccount({ userId: payload.id });
   return account;
 };
 
@@ -23,7 +23,7 @@ const updateAdminProfile = async (
 ) => {
   const userId = user.id;
 
-  await getAccount({ jwtPayload: user });
+  await getAccount({ userId });
 
   const updatedUser = await Admin.findByIdAndUpdate(
     userId,
@@ -41,7 +41,7 @@ const updateAdminProfile = async (
 };
 
 const getAllAdmins = async (query: Record<string, string>) => {
-  const searchableFields = ["name", "email"];
+  const searchableFields = ["name", "email", "phone"];
   const queryBuilder = new QueryBuilder(Admin.find(), query)
     .filter()
     .search(searchableFields)
@@ -56,7 +56,7 @@ const getAllAdmins = async (query: Record<string, string>) => {
 };
 
 const getAllAgents = async (query: Record<string, string>) => {
-  const searchableFields = ["name", "email"];
+  const searchableFields = ["name", "email", "phone"];
   const queryBuilder = new QueryBuilder(Agent.find(), query)
     .filter()
     .search(searchableFields)
@@ -71,7 +71,7 @@ const getAllAgents = async (query: Record<string, string>) => {
 };
 
 const getAllUsers = async (query: Record<string, string>) => {
-  const searchableFields = ["name", "email"];
+  const searchableFields = ["name", "email", "phone"];
   const queryBuilder = new QueryBuilder(User.find(), query)
     .filter()
     .search(searchableFields)
@@ -115,8 +115,8 @@ const getAllTransactions = async (query: Record<string, string>) => {
   return { data: transactions, meta };
 };
 
-const updateUserStatus = async (userId: Types.ObjectId, status: UserStatus) => {
-  const account = await getAccount({ userId });
+const updateUserStatus = async (email: string, status: UserStatus) => {
+  const account = await getAccount({ email });
   const { role, _id } = account;
 
   let updatedAccount = null;
@@ -162,7 +162,6 @@ const updateWalletStatus = async (
   walletId: string | Types.ObjectId,
   status: WalletStatus
 ) => {
-  console.log(walletId, status);
   const updatedWallet = await Wallet.findOneAndUpdate(
     { _id: walletId },
     { $set: { status } },
@@ -178,11 +177,11 @@ const updateWalletStatus = async (
 
 const updateAgentApprovalStatus = async (
   admin: JwtPayload,
-  agentId: string,
+  email: string,
   isApproved: boolean
 ) => {
   const updatedAgent = await Agent.findOneAndUpdate(
-    { _id: agentId },
+    { email: email },
     {
       $set: {
         isApproved,
