@@ -23,13 +23,10 @@ const getAgentTransactions = async (
   user: JwtPayload,
   query: Record<string, string>
 ) => {
-  const wallet = await getWallet({ userId: user.id });
-  const walletId = wallet._id;
-
   const searchableFields = ["type", "status"];
 
   const baseQuery = Transaction.find({
-    $or: [{ from: walletId }, { to: walletId }],
+    $or: [{ from: user.id }, { to: user.id }],
   });
 
   const queryBuilder = new QueryBuilder(baseQuery, query)

@@ -1,12 +1,15 @@
-import { TransactionType } from "../../constants/enums";
+import { TransactionType, UserRole } from "../../constants/enums";
 import HTTP_STATUS from "../../constants/httpStatus";
 import AppError from "../../utils/appError";
 import { QueryBuilder } from "../../utils/queryBuilder";
 import { ILimit } from "./limit.interface";
 import { Limit } from "./limit.model";
 
-const createLimit = async (payload: ILimit) => {
-  const existingLimit = await Limit.findOne({ type: payload.type });
+const createLimit = async (payload: Partial<ILimit>) => {
+  const existingLimit = await Limit.findOne({
+    type: payload.type,
+    role: payload.role,
+  });
 
   if (existingLimit) {
     throw new AppError(HTTP_STATUS.CONFLICT, "Limit already exists.");
@@ -32,8 +35,8 @@ const getAllLimits = async (query: Record<string, string>) => {
   return { data: limits, meta };
 };
 
-const getSingleLimit = async (type: TransactionType) => {
-  const limit = await Limit.findOne({ type });
+const getSingleLimit = async (params: Record<string, string>) => {
+  const limit = await Limit.findOne({ type: params.type, role: params.role });
 
   if (!limit) {
     throw new AppError(HTTP_STATUS.NOT_FOUND, "Limit not found.");
@@ -42,8 +45,8 @@ const getSingleLimit = async (type: TransactionType) => {
   return limit;
 };
 
-const toggleLimitStatus = async (type: TransactionType) => {
-  const limit = await Limit.findOne({ type });
+const toggleLimitStatus = async (params: Record<string, string>) => {
+  const limit = await Limit.findOne({ type: params.type, role: params.role });
 
   if (!limit) {
     throw new AppError(HTTP_STATUS.NOT_FOUND, "Limit not found.");
@@ -55,16 +58,23 @@ const toggleLimitStatus = async (type: TransactionType) => {
   return limit;
 };
 
-const updateLimit = async (type: TransactionType, payload: ILimit) => {
-  const limit = await Limit.findOne({ type });
+const updateLimit = async (
+  params: Record<string, string>,
+  payload: Partial<ILimit>
+) => {
+  const limit = await Limit.findOne({
+    type: params.type as TransactionType,
+    role: params.role as UserRole,
+  });
 
   if (!limit) {
     throw new AppError(HTTP_STATUS.NOT_FOUND, "Limit not found.");
   }
 
-  if (payload.type && payload.type !== type) {
+  if (payload.type && payload.type !== params.type) {
     const existingLimit = await Limit.findOne({
-      type: payload.type,
+      type: payload.type as TransactionType,
+      role: params.role as UserRole,
     });
 
     if (existingLimit) {
@@ -73,7 +83,7 @@ const updateLimit = async (type: TransactionType, payload: ILimit) => {
   }
 
   const updatedLimit = await Limit.findOneAndUpdate(
-    { type },
+    { type: params.type as TransactionType, role: payload.role as UserRole },
     {
       $set: payload,
     },
@@ -83,8 +93,11 @@ const updateLimit = async (type: TransactionType, payload: ILimit) => {
   return updatedLimit;
 };
 
-const deleteLimit = async (type: TransactionType) => {
-  const limit = await Limit.findOneAndDelete({ type });
+const deleteLimit = async (params: Record<string, string>) => {
+  const limit = await Limit.findOneAndDelete({
+    type: params.type,
+    role: params.role,
+  });
 
   if (!limit) {
     throw new AppError(HTTP_STATUS.NOT_FOUND, "Limit not found.");

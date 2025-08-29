@@ -8,14 +8,14 @@ const limitSchema = new Schema<ILimit>(
       type: String,
       enum: Object.values(TransactionType),
       required: true,
-      unique: true,
       index: true,
     },
 
     role: {
       type: String,
-      enum: Object.values(UserRole.USER || UserRole.AGENT),
+      enum: [UserRole.USER, UserRole.AGENT],
       required: true,
+      index: true,
     },
 
     minAmount: {

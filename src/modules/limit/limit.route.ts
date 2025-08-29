@@ -16,19 +16,19 @@ router.post(
 
 router.get("/", limitController.getAllLimits);
 
-router.get("/:type", limitController.getSingleLimit);
+router.get("/:type/:role", limitController.getSingleLimit);
 
-router.patch("/toggle-status/:type", limitController.toggleLimitStatus);
+router.patch("/toggle-status/:type/:role", limitController.toggleLimitStatus);
 
 router.patch(
-  "/:type",
+  "/:type/:role",
   validateRequest(ZodLimitSchema.update),
   checkAuth(UserRole.SUPER_ADMIN),
   limitController.updateLimit
 );
 
 router.delete(
-  "/:type",
+  "/:type/:role",
   checkAuth(UserRole.SUPER_ADMIN),
   limitController.deleteLimit
 );

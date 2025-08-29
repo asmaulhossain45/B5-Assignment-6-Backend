@@ -1,29 +1,27 @@
 import z from "zod";
 import { TransactionType, UserRole } from "../../constants/enums";
 
+const roles = [UserRole.USER, UserRole.AGENT] as const;
+
 const create = z.object({
   type: z.enum(Object.values(TransactionType)),
 
-  role: z.enum(Object.values(UserRole.USER || UserRole.AGENT)),
+  role: z.enum(roles),
 
-  minAmount: z
-    .number()
-    .nonnegative({ message: "Min amount must be non-negative" }),
-  maxAmount: z
-    .number()
-    .nonnegative({ message: "Max amount must be non-negative" }),
+  minAmount: z.number().positive({ message: "Min amount must be positive" }),
+  maxAmount: z.number().positive({ message: "Max amount must be positive" }),
 
   dailyLimit: z
     .number()
-    .nonnegative({ message: "Daily limit must be non-negative" })
+    .positive({ message: "Daily limit must be positive" })
     .optional(),
   weeklyLimit: z
     .number()
-    .nonnegative({ message: "Weekly limit must be non-negative" })
+    .positive({ message: "Weekly limit must be positive" })
     .optional(),
   monthlyLimit: z
     .number()
-    .nonnegative({ message: "Monthly limit must be non-negative" })
+    .positive({ message: "Monthly limit must be positive" })
     .optional(),
   isActive: z.boolean().optional().default(true),
 });
@@ -31,28 +29,28 @@ const create = z.object({
 const update = z.object({
   type: z.enum(Object.values(TransactionType)).optional(),
 
-  role: z.enum(Object.values(UserRole.USER || UserRole.AGENT)).optional(),
+  role: z.enum(roles).optional(),
 
   minAmount: z
     .number()
-    .nonnegative({ message: "Min amount must be non-negative" })
+    .positive({ message: "Min amount must be positive" })
     .optional(),
   maxAmount: z
     .number()
-    .nonnegative({ message: "Max amount must be non-negative" })
+    .positive({ message: "Max amount must be positive" })
     .optional(),
 
   dailyLimit: z
     .number()
-    .nonnegative({ message: "Daily limit must be non-negative" })
+    .positive({ message: "Daily limit must be positive" })
     .optional(),
   weeklyLimit: z
     .number()
-    .nonnegative({ message: "Weekly limit must be non-negative" })
+    .positive({ message: "Weekly limit must be positive" })
     .optional(),
   monthlyLimit: z
     .number()
-    .nonnegative({ message: "Monthly limit must be non-negative" })
+    .positive({ message: "Monthly limit must be positive" })
     .optional(),
 });
 

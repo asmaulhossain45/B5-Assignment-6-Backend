@@ -11,6 +11,7 @@ type Props = {
   email?: string;
   phone?: string;
   message?: string;
+  includePassword?: boolean;
 };
 
 const getAccount = async ({
@@ -19,39 +20,48 @@ const getAccount = async ({
   email,
   phone,
   message,
+  includePassword,
 }: Props) => {
+  const projection: string = includePassword ? "+password" : "-password";
+
   if (userId) {
-    const userAccount = await User.findById(userId);
+    const userAccount = await User.findById(userId).select(projection);
     if (userAccount) return userAccount;
 
-    const agentAccount = await Agent.findById(userId);
+    const agentAccount = await Agent.findById(userId).select(projection);
     if (agentAccount) return agentAccount;
 
-    const adminAccount = await Admin.findById(userId);
+    const adminAccount = await Admin.findById(userId).select(projection);
     if (adminAccount) return adminAccount;
   }
 
   if (walletId) {
-    const userAccount = await User.findOne({ wallet: walletId });
+    const userAccount = await User.findOne({ wallet: walletId }).select(
+      projection
+    );
     if (userAccount) return userAccount;
 
-    const agentAccount = await Agent.findOne({ wallet: walletId });
+    const agentAccount = await Agent.findOne({ wallet: walletId }).select(
+      projection
+    );
     if (agentAccount) return agentAccount;
   }
 
   if (email) {
     const account =
-      (await User.findOne({ email: email.toLowerCase() })) ||
-      (await Agent.findOne({ email: email.toLowerCase() })) ||
-      (await Admin.findOne({ email: email.toLowerCase() }));
+      (await User.findOne({ email: email.toLowerCase() }).select(projection)) ||
+      (await Agent.findOne({ email: email.toLowerCase() }).select(
+        projection
+      )) ||
+      (await Admin.findOne({ email: email.toLowerCase() }).select(projection));
     if (account) return account;
   }
 
   if (phone) {
     const account =
-      (await User.findOne({ phone })) ||
-      (await Agent.findOne({ phone })) ||
-      (await Admin.findOne({ phone }));
+      (await User.findOne({ phone }).select(projection)) ||
+      (await Agent.findOne({ phone }).select(projection)) ||
+      (await Admin.findOne({ phone }).select(projection));
     if (account) return account;
   }
 

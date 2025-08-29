@@ -13,7 +13,7 @@ import { ITransaction } from "../modules/transaction/transaction.interface";
 import { Transaction } from "../modules/transaction/transaction.model";
 import getTransactionId from "./getTransactionId";
 
-export interface ExecuteTransactionOptions {
+export interface Props {
   type: TransactionType;
   from?: Types.ObjectId;
   fromModel?: UserRole.USER | UserRole.AGENT;
@@ -25,9 +25,7 @@ export interface ExecuteTransactionOptions {
   notes?: string;
 }
 
-export const executeTransaction = async (
-  options: ExecuteTransactionOptions
-) => {
+export const executeTransaction = async (options: Props) => {
   const {
     type,
     from,
@@ -39,6 +37,14 @@ export const executeTransaction = async (
     reference,
     notes,
   } = options;
+
+  if (amount <= 0) {
+    throw new AppError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Amount must be greater than 0"
+    );
+  }
+
   const transactionId = getTransactionId();
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -60,20 +66,13 @@ export const executeTransaction = async (
   };
 
   try {
-    if (amount <= 0) {
-      throw new AppError(
-        HTTP_STATUS.BAD_REQUEST,
-        "Amount must be greater than 0"
-      );
-    }
-
-    const systemConfig = await Commission.findOne({
+    const commissionConfig = await Commission.findOne({
       type,
       isActive: true,
     }).session(session);
 
-    const chargePercentage = systemConfig?.charge || 0;
-    const commissionPercentage = systemConfig?.commission || 0;
+    const chargePercentage = commissionConfig?.charge || 0;
+    const commissionPercentage = commissionConfig?.commission || 0;
 
     const chargeAmount = (amount * chargePercentage) / 100;
     const commissionAmount = (amount * commissionPercentage) / 100;
@@ -81,17 +80,13 @@ export const executeTransaction = async (
     transactionData.charge = chargeAmount;
     transactionData.commission = commissionAmount;
 
-    const fromWallet = from
-      ? await Wallet.findOne({ owner: from }).session(session)
-      : null;
-    const toWallet = to
-      ? await Wallet.findOne({ owner: to }).session(session)
-      : null;
-    const agentWallet = agent
-      ? await Wallet.findOne({ owner: agent }).session(session)
-      : null;
-    const systemWallet = await Wallet.findOne({ isSystem: true }).session(
-      session
+    const [fromWallet, toWallet, agentWallet, systemWallet] = await Promise.all(
+      [
+        from ? Wallet.findOne({ owner: from }).session(session) : null,
+        to ? Wallet.findOne({ owner: to }).session(session) : null,
+        agent ? Wallet.findOne({ owner: agent }).session(session) : null,
+        Wallet.findOne({ isSystem: true }).session(session),
+      ]
     );
 
     if (
@@ -116,19 +111,22 @@ export const executeTransaction = async (
 
     transactionData.status = TransactionStatus.COMPLETED;
 
-    const transaction = await Transaction.create([transactionData], {
+    const [transaction] = await Transaction.create([transactionData], {
       session,
     });
 
     await session.commitTransaction();
     session.endSession();
 
-    return transaction[0];
-  } catch (error) {
+    return transaction;
+  } catch (error: any) {
     await Transaction.create(transactionData);
 
     await session.abortTransaction();
     session.endSession();
-    throw new AppError(HTTP_STATUS.BAD_REQUEST, "Transaction failed.");
+    throw new AppError(
+      HTTP_STATUS.BAD_REQUEST,
+      error?.message || "Transaction failed."
+    );
   }
 };

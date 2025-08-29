@@ -42,13 +42,14 @@ const transactionSchema = new Schema<ITransaction>(
     amount: {
       type: Number,
       required: true,
-      min: 0,
+      min: 10,
     },
 
     charge: {
       type: Number,
       required: true,
       min: 0,
+      max: 100,
       default: 0,
     },
 
@@ -56,6 +57,7 @@ const transactionSchema = new Schema<ITransaction>(
       type: Number,
       required: true,
       min: 0,
+      max: 100,
       default: 0,
     },
 

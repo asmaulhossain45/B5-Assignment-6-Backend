@@ -24,28 +24,31 @@ import { otpEmailTemplate } from "../../utils/emailTemplate";
 import checkUniqueAccount from "../../utils/checkUniqueAccount";
 
 const login = async (payload: Partial<IUser>) => {
-  const account = await getAccount({
+  const accountWithPassword = await getAccount({
     email: payload.email as string,
+    includePassword: true,
     message: "Invalid credentials.",
   });
-  
+
   const isPasswordMatch = await comparePassword(
     payload.password as string,
-    account.password as string
+    accountWithPassword.password as string
   );
-  
+
   if (!isPasswordMatch) {
     throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Invalid credentials.");
   }
 
   const JwtPayload = {
-    id: account._id as Types.ObjectId,
-    email: account.email,
-    role: account.role,
+    id: accountWithPassword._id as Types.ObjectId,
+    email: accountWithPassword.email,
+    role: accountWithPassword.role,
   };
 
   const accessToken = generateAccessToken(JwtPayload);
   const refreshToken = generateRefreshToken(JwtPayload);
+
+  const { password, ...account } = accountWithPassword.toObject();
 
   return { account, accessToken, refreshToken };
 };
@@ -147,7 +150,7 @@ const changePassword = async (
   oldPassword: string,
   newPassword: string
 ) => {
-  const account = await getAccount({ userId: user.id });
+  const account = await getAccount({ userId: user.id ,includePassword: true});
 
   const isPasswordMatch = await comparePassword(
     oldPassword,
@@ -165,7 +168,7 @@ const changePassword = async (
     throw new AppError(HTTP_STATUS.BAD_REQUEST, "Failed to change password.");
   }
 
-  return updatedAccount;
+  return null;
 };
 
 const sendResetOtp = async (email: string) => {
@@ -231,7 +234,7 @@ const resetPassword = async (
   otp: string,
   newPassword: string
 ) => {
-  const account = await getAccount({ email });
+  const account = await getAccount({ email, includePassword: true });
 
   if (!account.resetOtp || !account.resetOtpExpiryAt) {
     throw new AppError(

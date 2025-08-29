@@ -22,7 +22,7 @@ export class QueryBuilder<T> {
   }
 
   search(searchableFields: string[]): this {
-    const searchTerm = this.query.searchTerm;
+    const searchTerm = this.query.search;
     if (searchTerm) {
       const searchQuery = {
         $or: searchableFields.map((field) => ({
@@ -63,7 +63,6 @@ export class QueryBuilder<T> {
     const page = Number(this.query.page) || 1;
     const limit = Number(this.query.limit) || 10;
 
-    // const total = await this.modelQuery.model.countDocuments();
     const filer = this.modelQuery.getFilter();
     const total = await this.modelQuery.model.countDocuments(filer);
     const totalPage = Math.ceil(total / limit);

@@ -22,6 +22,7 @@ export const baseModelFields = {
     type: String,
     required: true,
     minLength: 8,
+    select: false,
   },
 
   dob: { type: Date },

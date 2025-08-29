@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import { limitService } from "./limit.service";
 import sendResponse from "../../utils/sendResponse";
-import { TransactionType } from "../../constants/enums";
+import { TransactionType, UserRole } from "../../constants/enums";
 
 const createLimit = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
@@ -18,7 +18,9 @@ const createLimit = catchAsync(async (req: Request, res: Response) => {
 
 const getAllLimits = catchAsync(async (req: Request, res: Response) => {
   const query = req.query;
-  const result = await limitService.getAllLimits(query as Record<string, string>);
+  const result = await limitService.getAllLimits(
+    query as Record<string, string>
+  );
 
   sendResponse(res, {
     success: true,
@@ -29,8 +31,8 @@ const getAllLimits = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleLimit = catchAsync(async (req: Request, res: Response) => {
-  const { type } = req.params;
-  const result = await limitService.getSingleLimit(type as TransactionType);
+  const params = req.params as { type: TransactionType; role: UserRole };
+  const result = await limitService.getSingleLimit(params);
 
   sendResponse(res, {
     success: true,
@@ -41,8 +43,8 @@ const getSingleLimit = catchAsync(async (req: Request, res: Response) => {
 });
 
 const toggleLimitStatus = catchAsync(async (req: Request, res: Response) => {
-  const { type } = req.params;
-  const result = await limitService.toggleLimitStatus(type as TransactionType);
+  const params = req.params as { type: TransactionType; role: UserRole };
+  const result = await limitService.toggleLimitStatus(params);
 
   sendResponse(res, {
     success: true,
@@ -54,8 +56,8 @@ const toggleLimitStatus = catchAsync(async (req: Request, res: Response) => {
 
 const updateLimit = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
-  const { type } = req.params;
-  const result = await limitService.updateLimit(type as TransactionType, payload);
+  const params = req.params as { type: TransactionType; role: UserRole };
+  const result = await limitService.updateLimit(params, payload);
 
   sendResponse(res, {
     success: true,
@@ -66,15 +68,15 @@ const updateLimit = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteLimit = catchAsync(async (req: Request, res: Response) => {
-  const { type } = req.params;
-  const result = await limitService.deleteLimit(type as TransactionType);
+  const params = req.params as { type: TransactionType; role: UserRole };
+  const result = await limitService.deleteLimit(params);
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Limit deleted successfully",
     data: result,
-  })
+  });
 });
 
 export const limitController = {
