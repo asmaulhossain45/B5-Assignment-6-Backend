@@ -1,10 +1,9 @@
-import { Types } from "mongoose";
 import { TransactionType, UserRole } from "../constants/enums";
 import HTTP_STATUS from "../constants/httpStatus";
 import getAccount from "../shared/getAccount";
-import AppError from "./appError";
 import { IUser } from "../modules/user/user.interface";
 import { IAgent } from "../modules/agent/agent.interface";
+import AppError from "../utils/appError";
 
 type Props = {
   senderEmail?: string;

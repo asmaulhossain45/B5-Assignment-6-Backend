@@ -4,6 +4,8 @@ import getAccount from "./getAccount";
 import { Wallet } from "../modules/wallet/wallet.model";
 import AppError from "../utils/appError";
 import HTTP_STATUS from "../constants/httpStatus";
+import { IUser } from "../modules/user/user.interface";
+import { IAgent } from "../modules/agent/agent.interface";
 
 interface Props {
   userId?: Types.ObjectId;
@@ -35,7 +37,7 @@ const getWallet = async ({
   if (email || phone) {
     const account = await getAccount({ email, phone });
 
-    if (account && account.wallet) {
+    if ("wallet" in account) {
       wallet = await Wallet.findById(account.wallet);
       if (wallet) return wallet;
     }
