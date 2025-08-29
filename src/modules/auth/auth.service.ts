@@ -21,7 +21,8 @@ import getAccount from "../../shared/getAccount";
 import { generateOtp, hashOtp, verifyOtp } from "../../utils/otp";
 import sendMail from "../../utils/sendMail";
 import { otpEmailTemplate } from "../../utils/emailTemplate";
-import checkUniqueAccount from "../../utils/checkUniqueAccount";
+import checkUniqueAccount from "../../shared/checkUniqueAccount";
+
 
 const login = async (payload: Partial<IUser>) => {
   const accountWithPassword = await getAccount({

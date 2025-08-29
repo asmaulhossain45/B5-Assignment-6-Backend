@@ -2,7 +2,7 @@ import HTTP_STATUS from "../constants/httpStatus";
 import { Admin } from "../modules/admin/admin.model";
 import { Agent } from "../modules/agent/agent.model";
 import { User } from "../modules/user/user.model";
-import AppError from "./appError";
+import AppError from "../utils/appError";
 
 type Props = {
   email?: string;
